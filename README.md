@@ -136,18 +136,28 @@ fake-news-detector/
 5. FastAPI + Dockerfile + demo UI (`api/main.py:87`, `Dockerfile:1`, `demo/app.py:13`) ✅
 6. Evaluation report, README, CI (`src/evaluate.py:29`, `.github/workflows/ci.yml:1`) ✅
 
-## Repo Structure
+## Components — 7 Core + How to Run (Concise)
 
+> Previous 11 steps were detailed actions. Actual **code components = 7 (2 live instances + 5 batch jobs)**. Explainability is embedded in Serving.
+
+| # | Component | Code | Type | How to Run (1 command) |
+|---|---|---|---|---|
+| 1 | **Ingestion** | `data/scripts/ingest.py:110` | Batch job | `python data/scripts/ingest.py --out data/raw/ingested.parquet` |
+| 2 | **Cleaning / Normalization** | `data/scripts/clean.py:19` | Library (used by 1 & 3) | `python -m pytest tests/test_clean.py -v` or `python data/scripts/clean.py --input in.parquet --output out.parquet` |
+| 3 | **Dataset Builder** | `data/scripts/build_dataset.py:89` | Batch job | `python data/scripts/build_dataset.py --synthetic --n 2000 --out-dir data/processed` (real: `--welfake data/raw/WELFake_Dataset.csv`) |
+| 4 | **Model + Training** | `src/model.py:19`, `src/train.py:34`, `src/baseline.py:14`, `configs/train_config.yaml:1` | Batch job | `python src/baseline.py` (CPU) or `python src/train.py --config configs/train_config.yaml` (GPU, 5-fold) |
+| 5 | **Evaluation** | `src/evaluate.py:29`, `reports/evaluation_report.md:1` | Batch job (once) | `python src/evaluate.py --test data/processed/test.parquet --use-baseline --report reports/evaluation_report.md` |
+| 6 | **Serving API** (+ Explainability `src/explain.py:22` via `api/main.py:118`) | `api/main.py:87`, `api/schemas.py:7` | **Live instance :8000** | `uvicorn api.main:app --reload --port 8000` → `GET /health`, `POST /predict {"title","body"}` |
+| 7 | **Deployment + Demo** | `Dockerfile:1`, `docker-compose.yml:1`, `demo/app.py:13`, `.github/workflows/ci.yml:1` | **Live instances :8000 + :8501** (+optional Postgres) | `streamlit run demo/app.py --server.port 8501` ; `docker-compose up --build` (starts API+Demo+DB together) |
+
+**Run entire system in 3 commands:**
+```bash
+$env:PYTHONPATH="."; python data/scripts/build_dataset.py --synthetic --n 2000 --out-dir data/processed  # batch 1-5
+uvicorn api.main:app --port 8000          # instance 6
+streamlit run demo/app.py --server.port 8501  # instance 7
+# or single: docker-compose up --build
 ```
-configs/train_config.yaml
-data/scripts/ingest.py, clean.py, build_dataset.py
-src/model.py, train.py, evaluate.py, explain.py, baseline.py, utils.py
-api/main.py, schemas.py
-demo/app.py
-tests/test_clean.py, test_model.py, test_api.py
-reports/evaluation_report.md
-Dockerfile, docker-compose.yml, .github/workflows/ci.yml
-```
+Tests: `python -m pytest tests -q` (9 passed) + `python -m ruff check .` — see `pyproject.toml:1`.
 
 ## Setup
 
