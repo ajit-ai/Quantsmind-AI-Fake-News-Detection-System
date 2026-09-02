@@ -1,0 +1,34 @@
+# Training configuration — Factual: single-source truth for hyperparams
+model_name: "roberta-base"  # or "microsoft/deberta-v3-base"
+max_length: 512
+truncation_strategy: "tail"  # title preserved, body truncated
+learning_rate: 2.0e-5
+batch_size: 16
+eval_batch_size: 32
+epochs: 3
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 42
+output_dir: "models/checkpoints"
+logging_steps: 50
+save_strategy: "epoch"
+evaluation_strategy: "epoch"
+load_best_model_at_end: true
+metric_for_best_model: "f1"
+num_folds: 5
+gradient_accumulation_steps: 1
+fp16: false
+onnx_export: false
+
+# Data paths
+train_file: "data/processed/train.parquet"
+val_file: "data/processed/val.parquet"
+test_file: "data/processed/test.parquet"
+
+# Optimizer / scheduler
+lr_scheduler_type: "linear"
+adam_epsilon: 1.0e-8
+max_grad_norm: 1.0
+
+# Baseline
+baseline_output: "models/baseline.joblib"

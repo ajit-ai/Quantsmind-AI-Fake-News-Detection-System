@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./configs:/app/configs:ro
+    environment:
+      - MODEL_PATH=models/checkpoints/best
+      - MODEL_NAME=roberta-base
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional Postgres for ingestion storage — uncomment if needed
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: fakenews
+  #     POSTGRES_USER: fakenews
+  #     POSTGRES_PASSWORD: fakenews
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+# volumes:
+#   pgdata:
